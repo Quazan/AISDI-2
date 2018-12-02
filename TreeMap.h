@@ -80,6 +80,8 @@ public:
     {
         Clear(A->left);
         Clear(A->right);
+        value_type *val = A->value;
+        delete val;
         delete A;
     }
   }
@@ -345,8 +347,12 @@ public:
     {
         if(key == parent->value->first)
         {
+            value_type *val = parent->value;
+
+            delete val;
             parent->value = temp->value;
-            return temp->value->second;
+            delete temp;
+            return parent->value->second;
         }
 
         if(key < parent->value->first)
@@ -672,6 +678,8 @@ public:
         throw std::out_of_range("");
     }
     removeNode(tmp);
+    value_type *val = tmp->value;
+    delete val;
     delete tmp;
   }
 
@@ -683,6 +691,8 @@ public:
         throw std::out_of_range("");
     }
     removeNode(tmp);
+    value_type *val = tmp->value;
+    delete val;
     delete tmp;
   }
 
