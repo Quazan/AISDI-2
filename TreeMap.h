@@ -52,7 +52,6 @@ public:
     SIZE = 0;
   }
 
-
   TreeMap(std::initializer_list<value_type> list):TreeMap()
   {
     for(auto it = list.begin(); it < list.end(); it++)

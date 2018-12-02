@@ -5,6 +5,7 @@
 #include <initializer_list>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace aisdi
 {
@@ -19,101 +20,279 @@ public:
   using size_type = std::size_t;
   using reference = value_type&;
   using const_reference = const value_type&;
+  using Vector = std::vector<value_type>;
+  using hash_value = int (KeyType);
 
   class ConstIterator;
   class Iterator;
   using iterator = Iterator;
   using const_iterator = ConstIterator;
 
+
+
+  std::hash <int> makeHash;
+
+  Vector *tab;
+
+  int MAX_SIZE;
+  int SIZE;
+
   HashMap()
-  {}
-
-  HashMap(std::initializer_list<value_type> list)
   {
-    (void)list; // disables "unused argument" warning, can be removed when method is implemented.
-    throw std::runtime_error("TODO");
+    SIZE = 0;
+    MAX_SIZE = 99999;
+    tab = new Vector[MAX_SIZE];
   }
 
-  HashMap(const HashMap& other)
+  ~HashMap()
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+    delete[] tab;
+    SIZE = 0;
+    MAX_SIZE = 0;
   }
 
-  HashMap(HashMap&& other)
+  HashMap(std::initializer_list<value_type> list):HashMap()
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+    for(auto it = list.begin(); it != list.end(); it++)
+    {
+        this->operator[](it->first) = it->second;
+    }
+  }
+
+  HashMap(const HashMap& other):HashMap()
+  {
+    for(auto it = other.begin(); it != other.end(); it++)
+    {
+        this->operator[](it->first) = it->second;
+    }
+  }
+
+  HashMap(HashMap&& other):HashMap()
+  {
+    std::swap(SIZE, other.SIZE);
+    std::swap(tab, other.tab);
+    std::swap(MAX_SIZE, other.MAX_SIZE);
   }
 
   HashMap& operator=(const HashMap& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+    if(other == *this)
+    {
+        return *this;
+    }
+
+    SIZE = 0;
+    delete[] tab;
+    tab = new Vector[MAX_SIZE];
+
+    for(auto it = other.begin(); it != other.end(); it++)
+    {
+        this->operator[](it->first) = it->second;
+    }
+
+    return *this;
   }
 
   HashMap& operator=(HashMap&& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+    SIZE = 0;
+    delete[] tab;
+    tab = new Vector[MAX_SIZE];
+
+    std::swap(SIZE, other.SIZE);
+    std::swap(tab, other.tab);
+    std::swap(MAX_SIZE, other.MAX_SIZE);
+
+    return *this;
   }
 
   bool isEmpty() const
   {
-    throw std::runtime_error("TODO");
+    if(SIZE == 0)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
   }
 
   mapped_type& operator[](const key_type& key)
   {
-    (void)key;
-    throw std::runtime_error("TODO");
+    int HASH;
+
+    HASH = makeHash((int)key)%MAX_SIZE;
+
+    int i = 0;
+    for(auto it = tab[HASH].begin(); it != tab[HASH].end(); it++)
+    {
+        if(tab[HASH][i].first == key)
+        {
+            tab[HASH][i].second = mapped_type{};
+
+            return tab[HASH][i].second;
+        }
+    }
+    tab[HASH].push_back(value_type(key, mapped_type{}));
+    SIZE++;
+
+    return tab[HASH].back().second;
+  }
+
+  mapped_type& getValue(const key_type& key) const
+  {
+    int HASH = makeHash(key);
+
+    if(!tab[HASH].size())
+    {
+        throw std::out_of_range("");
+    }
+
+    int i = 0;
+    for(auto it = tab[HASH].begin(); it != tab[HASH].end(); it++)
+    {
+
+        if(tab[HASH][i].first == key)
+        {
+            return tab[HASH][i].second;
+        }
+
+        i++;
+    }
+
+    throw std::out_of_range("");
   }
 
   const mapped_type& valueOf(const key_type& key) const
   {
-    (void)key;
-    throw std::runtime_error("TODO");
+    return getValue(key);
   }
 
   mapped_type& valueOf(const key_type& key)
   {
-    (void)key;
-    throw std::runtime_error("TODO");
+    return getValue(key);
   }
 
   const_iterator find(const key_type& key) const
   {
-    (void)key;
-    throw std::runtime_error("TODO");
+    int HASH = makeHash((int)key)%MAX_SIZE;
+
+    if(SIZE == 0 || tab[HASH].size() == 0) return end();
+
+    int i = 0;
+    for(auto it = tab[HASH].begin(); it != tab[HASH].end(); it++)
+    {
+
+        if(tab[HASH][i].first == key)
+        {
+            break;
+        }
+        i++;
+    }
+
+    ConstIterator it;
+    it.tab= tab;
+    it.HASH = HASH;
+    it.pos = i;
+
+    return it;
   }
 
   iterator find(const key_type& key)
   {
-    (void)key;
-    throw std::runtime_error("TODO");
+    int HASH = makeHash((int)key)%MAX_SIZE;
+
+    if(SIZE == 0 || tab[HASH].size() == 0) return end();
+
+    int i = 0;
+    for(auto it = tab[HASH].begin(); it != tab[HASH].end(); it++)
+    {
+
+        if(tab[HASH][i].first == key)
+        {
+            break;
+        }
+        i++;
+    }
+
+    Iterator it;
+    it.tab= tab;
+    it.HASH = HASH;
+    it.pos = i;
+
+    return it;
   }
 
   void remove(const key_type& key)
   {
-    (void)key;
-    throw std::runtime_error("TODO");
+    int HASH = makeHash((int)key)%MAX_SIZE;
+
+    if(tab[HASH].size() == 0)
+    {
+        throw std::out_of_range("");
+    }
+
+    int i = 0;
+    for(auto it = tab[HASH].begin(); it != tab[HASH].end(); it++)
+    {
+        if(tab[HASH][i].first == key)
+        {
+            SIZE--;
+            tab[HASH].erase(it);
+        }
+        i++;
+    }
   }
 
   void remove(const const_iterator& it)
   {
-    (void)it;
-    throw std::runtime_error("TODO");
+    //int i = 0;
+
+    if(tab[it.HASH].size() == 0 || it.pos >= (int)tab[it.HASH].size())
+    {
+        throw std::out_of_range("");
+    }
+    SIZE--;
+    tab[it.HASH].erase(tab[it.HASH].begin() + it.pos);
+
+    /*for(auto iter = tab[it.HASH].begin() ; iter != tab[it.HASH].end(); iter++)
+    {
+        if(i == it.pos)
+        {
+            SIZE--;
+            tab[it.HASH].erase(iter);
+        }
+        i++;
+    }*/
   }
 
   size_type getSize() const
   {
-    throw std::runtime_error("TODO");
+    return SIZE;
   }
 
   bool operator==(const HashMap& other) const
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+    if(SIZE != other.SIZE)
+    {
+        return false;
+    }
+
+    auto a = begin();
+    auto b = other.begin();
+
+    while(a != end())
+    {
+        if(a.HASH != b.HASH || a.pos != b.pos || a.tab[a.HASH][a.pos].first != b.tab[b.HASH][b.pos].first || a.tab[a.HASH][a.pos].second != b.tab[b.HASH][b.pos].second) return false;
+        a++;
+        b++;
+    }
+
+    return true;
+
+
+
   }
 
   bool operator!=(const HashMap& other) const
@@ -121,24 +300,67 @@ public:
     return !(*this == other);
   }
 
+  int findFirstHASH() const
+  {
+    if(SIZE == 0) return 0;
+    int i = 0;
+    while(i < MAX_SIZE && tab[i].size() == 0 )
+    {
+        i++;
+    }
+    return i;
+  }
+
+  int findLastHASH() const
+  {
+    if(SIZE == 0) return 0;
+    int i = MAX_SIZE - 1;
+    while(i >= 0 && tab[i].size() == 0)
+    {
+        i--;
+    }
+
+    i++;
+    return i;
+  }
   iterator begin()
   {
-    throw std::runtime_error("TODO");
+    Iterator it;
+    it.tab = tab;
+    it.HASH = findFirstHASH();
+    it.pos = 0;
+
+    return it;
   }
 
   iterator end()
   {
-    throw std::runtime_error("TODO");
+    Iterator it;
+    it.tab = tab;
+    it.HASH = findLastHASH();
+    it.pos = 0;
+
+    return it;
   }
 
   const_iterator cbegin() const
   {
-    throw std::runtime_error("TODO");
+    ConstIterator it;
+    it.tab = tab;
+    it.HASH = findFirstHASH();
+    it.pos = 0;
+
+    return it;
   }
 
   const_iterator cend() const
   {
-    throw std::runtime_error("TODO");
+    ConstIterator it;
+    it.tab = tab;
+    it.HASH = findLastHASH();
+    it.pos = 0;
+
+    return it;
   }
 
   const_iterator begin() const
@@ -160,39 +382,165 @@ public:
   using iterator_category = std::bidirectional_iterator_tag;
   using value_type = typename HashMap::value_type;
   using pointer = const typename HashMap::value_type*;
+  using Vector = std::vector<value_type>;
+  int MAX_SIZE = 99999;
+  Vector *tab;
+  int HASH;
+  int pos;
+
 
   explicit ConstIterator()
-  {}
+  {
+    tab = nullptr;
+    HASH = 0;
+    pos = 0;
+  }
 
   ConstIterator(const ConstIterator& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+    tab = other.tab;
+    HASH = other.HASH;
+    pos = other.pos;
   }
 
   ConstIterator& operator++()
   {
-    throw std::runtime_error("TODO");
+    int HASH_b = HASH;
+
+    if(tab[HASH].size() == 0)
+    {
+        throw std::out_of_range("");
+    }
+
+    if((int)tab[HASH].size() - 1 < pos)
+    {
+        pos++;
+        return *this;
+    }
+    else
+    {
+        HASH++;
+        pos = 0;
+        while(HASH < MAX_SIZE -1 && tab[HASH].size() == 0)
+        {
+            HASH++;
+        }
+
+        if(HASH == MAX_SIZE -1) HASH = HASH_b + 1;
+
+        return *this;
+    }
   }
 
   ConstIterator operator++(int)
   {
-    throw std::runtime_error("TODO");
+   int HASH_b = HASH;
+
+    if(tab[HASH].size() == 0)
+    {
+        throw std::out_of_range("");
+    }
+
+    ConstIterator tmp;
+    tmp.tab = tab;
+    tmp.HASH = HASH;
+    tmp.pos = pos;
+
+    if((int)tab[HASH].size() - 1 < pos)
+    {
+        pos++;
+    }
+    else
+    {
+        HASH++;
+        pos = 0;
+        while(HASH < MAX_SIZE -1 && tab[HASH].size() == 0)
+        {
+            HASH++;
+        }
+
+         if(HASH == MAX_SIZE -1) HASH = HASH_b + 1;
+    }
+
+    return tmp;
   }
 
   ConstIterator& operator--()
   {
-    throw std::runtime_error("TODO");
+    if(tab[HASH].size() == 0 && HASH == 0)
+    {
+        throw std::out_of_range("");
+    }
+
+    if(pos > 0)
+    {
+        pos--;
+        return *this;
+    }
+    else
+    {
+        HASH--;
+
+        while(HASH >= 0 && tab[HASH].size() == 0)
+        {
+            HASH--;
+        }
+
+        if(HASH == -1)
+        {
+            throw std::out_of_range("");
+        }
+
+        pos = tab[HASH].size()-1;
+
+        return *this;
+    }
   }
 
   ConstIterator operator--(int)
   {
-    throw std::runtime_error("TODO");
+    if(tab[HASH].size() == 0 && HASH == 0)
+    {
+        throw std::out_of_range("");
+    }
+
+    ConstIterator tmp;
+    tmp.tab = tab;
+    tmp.HASH = HASH;
+    tmp.pos = pos;
+
+    if(pos > 0)
+    {
+        pos--;
+    }
+    else
+    {
+        HASH--;
+
+        while(HASH >= 0 && tab[HASH].size() == 0)
+        {
+            HASH--;
+        }
+
+        if(HASH == -1)
+        {
+            throw std::out_of_range("");
+        }
+
+        pos = tab[HASH].size()-1;
+
+    }
+
+    return tmp;
   }
 
   reference operator*() const
   {
-    throw std::runtime_error("TODO");
+    if(tab[HASH].size() == 0)
+    {
+        throw std::out_of_range("");
+    }
+    return tab[HASH][pos];
   }
 
   pointer operator->() const
@@ -202,8 +550,8 @@ public:
 
   bool operator==(const ConstIterator& other) const
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+    if(HASH == other.HASH && pos == other.pos && tab == other.tab) return true;
+    else return false;
   }
 
   bool operator!=(const ConstIterator& other) const
