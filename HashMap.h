@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
-
+#include <stack>
 namespace aisdi
 {
 
@@ -20,7 +20,8 @@ public:
   using size_type = std::size_t;
   using reference = value_type&;
   using const_reference = const value_type&;
-  using Vector = std::vector<value_type>;
+  using Pair = std::pair<const key_type, mapped_type>;
+  using Vector = std::vector<Pair>;
   using hash_value = int (KeyType);
 
   class ConstIterator;
@@ -142,7 +143,7 @@ public:
 
   mapped_type& getValue(const key_type& key) const
   {
-    int HASH = makeHash(key);
+    int HASH = makeHash((int)key)%MAX_SIZE;
 
     if(!tab[HASH].size())
     {
@@ -224,14 +225,41 @@ public:
     return it;
   }
 
+  void Erase(int i, int h)
+  {
+    std::stack<Pair> s;
+    //value_type p;
+    int x = tab[h].size()-1;
+
+    while(i < x)
+    {
+        s.push(tab[h].back());
+        tab[h].pop_back();
+        //p = tab[h].back();
+        //tab[h].pop_back();
+        //s.push(p);
+        x--;
+    }
+    tab[h].pop_back();
+    while(s.size())
+    {
+
+        //p = s.top();
+        //s.pop();
+        tab[h].push_back(s.top());
+        s.pop();
+    }
+  }
+
   void remove(const key_type& key)
   {
     int HASH = makeHash((int)key)%MAX_SIZE;
 
-    if(tab[HASH].size() == 0)
+    if(tab[HASH].size() == 0 || SIZE == 0)
     {
         throw std::out_of_range("");
     }
+
 
     int i = 0;
     for(auto it = tab[HASH].begin(); it != tab[HASH].end(); it++)
@@ -239,7 +267,11 @@ public:
         if(tab[HASH][i].first == key)
         {
             SIZE--;
-            tab[HASH].erase(it);
+            Erase(i, HASH);
+            //std::swap(tab[HASH].back(), tab[HASH][i]);
+            //tab[HASH].pop_back();
+            break;
+            //tab[HASH].erase(it);
         }
         i++;
     }
@@ -249,13 +281,14 @@ public:
   {
     //int i = 0;
 
-    if(tab[it.HASH].size() == 0 || it.pos >= (int)tab[it.HASH].size())
+    if(tab[it.HASH].size() == 0 || it.pos >= (int)tab[it.HASH].size() || SIZE == 0)
     {
         throw std::out_of_range("");
     }
     SIZE--;
-    tab[it.HASH].erase(tab[it.HASH].begin() + it.pos);
-
+    Erase(it.pos, it.HASH);
+    //tab[it.HASH].erase(tab[it.HASH].begin() + it.pos);
+    //tab[it.HASH].pop_back();
     /*for(auto iter = tab[it.HASH].begin() ; iter != tab[it.HASH].end(); iter++)
     {
         if(i == it.pos)
@@ -290,9 +323,6 @@ public:
     }
 
     return true;
-
-
-
   }
 
   bool operator!=(const HashMap& other) const
@@ -382,7 +412,8 @@ public:
   using iterator_category = std::bidirectional_iterator_tag;
   using value_type = typename HashMap::value_type;
   using pointer = const typename HashMap::value_type*;
-  using Vector = std::vector<value_type>;
+  using Pair = std::pair<const key_type, mapped_type>;
+  using Vector = std::vector<Pair>;
   int MAX_SIZE = 99999;
   Vector *tab;
   int HASH;
@@ -412,7 +443,7 @@ public:
         throw std::out_of_range("");
     }
 
-    if((int)tab[HASH].size() - 1 < pos)
+    if((int)tab[HASH].size() - 1 > pos)
     {
         pos++;
         return *this;
@@ -446,7 +477,7 @@ public:
     tmp.HASH = HASH;
     tmp.pos = pos;
 
-    if((int)tab[HASH].size() - 1 < pos)
+    if((int)tab[HASH].size() - 1 > pos)
     {
         pos++;
     }
@@ -534,12 +565,20 @@ public:
     return tmp;
   }
 
+  /*value_type& getValueType() const
+  {
+    value_type *value;
+    value = tab[HASH][pos];
+    return *value;
+  }*/
+
   reference operator*() const
   {
     if(tab[HASH].size() == 0)
     {
         throw std::out_of_range("");
     }
+
     return tab[HASH][pos];
   }
 
