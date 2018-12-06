@@ -1,0 +1,10 @@
+namespace std
+{
+	template <> struct hash<OperationCountingObject>
+	{
+	    size_t operator()( const OperationCountingObject & x ) const
+	    {
+		return hash<int>()( int(x) );
+	    }
+	};
+}
